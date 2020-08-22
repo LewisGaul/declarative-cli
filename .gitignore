@@ -1,0 +1,28 @@
+# Dev-related
+__pycache__/
+*venv*
+build/
+dist/
+*.egg-info/
+.last_error.txt
+
+# Test-generated
+coverage/
+.coverage
+coverage*.xml
+*,cover
+htmlcov/
+.pytest*
+
+# Editor-related
+.idea/
+.vscode/
+
+# Ignored extensions
+*.diff
+*.log
+*.ipynb
+
+# Python tooling
+.ipynb_checkpoints/
+.mypy_cache/
