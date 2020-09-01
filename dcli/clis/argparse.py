@@ -9,7 +9,7 @@ __all__ = ("CLIParser",)
 
 import argparse
 import sys
-from typing import Optional, List
+from typing import List, Optional
 
 from ..schema import RootNode
 
@@ -26,7 +26,7 @@ class CLIParser:
         self._prog = prog
 
     def parse_args(
-            self, args: Optional[List[str]] = None, namespace=None
+        self, args: Optional[List[str]] = None, namespace=None
     ) -> argparse.Namespace:
         if args is None:
             args = sys.argv
@@ -69,7 +69,7 @@ class CLIParser:
             formatter_class=argparse.RawDescriptionHelpFormatter,
         )
         # Use subparsers to represent the subnodes in displayed help.
-        if node.subtree:
+        if node.subtree and show_help:
             subparsers = parser.add_subparsers(title="submodes")
             subparsers.required = node.command is None
             for subnode in node.subtree:

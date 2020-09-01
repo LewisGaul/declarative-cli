@@ -14,7 +14,6 @@ import re
 import subprocess as sp
 import sys
 import traceback
-import venv
 from typing import Iterable, Optional, Union
 
 import yaml
@@ -23,8 +22,7 @@ from dcli import CLIParser, RootNode
 
 
 _THIS_DIR = pathlib.Path(__file__).parent
-_PROJECT_DIR = _THIS_DIR.parent
-_VENV_DIR = _PROJECT_DIR / ".venv"
+_VENV_DIR = _THIS_DIR / ".venv"
 
 logger = logging.getLogger(__name__)
 
@@ -51,7 +49,7 @@ class NoVenvError(UserFacingError):
     def __init__(self):
         super().__init__(
             user_msg="Virtual environment has not yet been set up, try running "
-            "'python run.py venv'"
+            "with the 'venv' arg to set it up"
         )
 
 
@@ -65,7 +63,8 @@ class MissingReqsError(UserFacingError):
     def __init__(self, missing: Iterable[str]):
         super().__init__(
             "The following requirements were not found: " + ", ".join(missing),
-            user_msg="Not all requirements are installed",
+            user_msg="Not all requirements are installed, try running "
+            "with the 'venv' arg to update dependencies",
         )
 
 
@@ -104,6 +103,16 @@ def _find_venv_exe(path: PathLike, exe: str) -> pathlib.Path:
     return full_path
 
 
+def _find_base_python_exe() -> pathlib.Path:
+    """Look for the base python executable."""
+    if hasattr(sys, "real_prefix"):
+        prefix = sys.real_prefix
+    else:
+        prefix = sys.base_prefix
+    exe = "python.exe" if sys.platform.startswith("win") else "bin/python3"
+    return pathlib.Path(prefix) / exe
+
+
 def _check_python_capabilities(location: Optional[PathLike] = None):
     """
     Check the basic Python capabilities (version and stdlib modules).
@@ -125,13 +134,6 @@ def _check_python_capabilities(location: Optional[PathLike] = None):
             raise UserFacingError(
                 user_msg="Python version 3.6+ required, detected {}".format(version)
             )
-        try:
-            import ensurepip
-        except ImportError as e:
-            raise UserFacingError(
-                user_msg="Module 'ensurepip' not found, try running 'deactivate'"
-            ) from e
-        return
     else:
         python_exe = _find_venv_exe(location, "python")
         # Check venv Python version.
@@ -204,10 +206,10 @@ def _check_requirements(python_exe: PathLike, *, dev: bool = False):
         raise UserFacingError(user_msg="Error checking installed packages") from e
 
     if dev:
-        req_path = _PROJECT_DIR / "requirements-dev.txt"
+        req_path = _THIS_DIR / "requirements-dev.txt"
         # TODO: Should also be checking main project reqs.
     else:
-        req_path = _PROJECT_DIR / "requirements.txt"
+        req_path = _THIS_DIR / "requirements.txt"
     try:
         with open(req_path) as f:
             lines = {
@@ -258,6 +260,28 @@ def _check_venv(path: PathLike):
         )
 
 
+def _create_venv(path: PathLike):
+    """
+    Create a virtualenv.
+
+    :param path:
+        Path to virtualenv directory to create.
+    :raises UserFacingError:
+        If anything goes wrong.
+    """
+    python_exe = _find_base_python_exe()
+    try:
+        sp.run(
+            [str(python_exe), "-m", "venv", str(path)],
+            stdout=sp.PIPE,
+            stderr=sp.PIPE,
+            check=True,
+            timeout=20,
+        )
+    except (sp.CalledProcessError, sp.TimeoutExpired) as e:
+        raise UserFacingError(user_msg="Error creating virtual environment") from e
+
+
 # ------------------------------------------------------------------------------
 # Command functions
 # ------------------------------------------------------------------------------
@@ -272,11 +296,6 @@ def run_app(args):
 
 def make_venv(args):
     """Create or update the project virtualenv."""
-    # TODO: Need some way to handle this being run from within a venv... In
-    #  this case ensurepip is generally not available, but this check alone
-    #  is not sufficient. What's more, the venv could be already created with
-    #  a dodgy ability to access the parent venv's pip...
-
     print("INFO: Checking Python capabilities...")
     _check_python_capabilities()
 
@@ -284,10 +303,15 @@ def make_venv(args):
         try:
             python_exe = _find_venv_exe(_VENV_DIR, "python")
         except FileNotFoundError:
-            raise NoVenvError()
-        _check_requirements(python_exe, dev=args.dev)
+            print(NoVenvError().user_msg)
+            return 1
+        try:
+            _check_requirements(python_exe, dev=args.dev)
+        except MissingReqsError as e:
+            print(e.user_msg)
+            return 1
         print("Requirements satisfied!")
-        return
+        return 0
 
     # Create venv if it doesn't exist yet.
     try:
@@ -295,9 +319,16 @@ def make_venv(args):
         print("INFO: Found existing virtual environment")
     except NoVenvError:
         print("INFO: Creating virtual environment...")
-        venv.create(_VENV_DIR, with_pip=True)
+        _create_venv(_VENV_DIR)
         print("INFO: Virtual environment successfully created")
 
+    try:
+        _check_requirements(_find_venv_exe(_VENV_DIR, "python"), dev=args.dev)
+    except MissingReqsError:
+        pass
+    else:
+        print("INFO: Requirements already satisfied")
+        return 0
     # Do pip install.
     print("INFO: Checking for pip updates...")
     pip_exe = _find_venv_exe(_VENV_DIR, "pip")
@@ -308,14 +339,15 @@ def make_venv(args):
             stderr=sp.PIPE,
             check=True,
         )
+        # TODO: Report whether pip was actually updated.
         print("INFO: pip update check was successful")
     except sp.CalledProcessError:
         raise UserFacingError(user_msg="Error checking for pip update")
     if args.dev:
-        req_file = _PROJECT_DIR / "requirements-dev.txt"
+        req_file = _THIS_DIR / "requirements-dev.txt"
         req_type = "developer"
     else:
-        req_file = _PROJECT_DIR / "requirements.txt"
+        req_file = _THIS_DIR / "requirements.txt"
         req_type = "project"
     print("INFO: Installing {} requirements...".format(req_type))
     try:
@@ -401,9 +433,8 @@ def main(argv) -> int:
     logger.debug("Got args:", args)
 
     # Run the command!
-    exit_code = 0
     try:
-        _COMMANDS[args.command](args)
+        exit_code = _COMMANDS[args.command](args)
     except UserFacingError as e:
         print("ERROR:", e.user_msg, file=sys.stderr)
         _save_error_to_file(e)
@@ -415,6 +446,9 @@ def main(argv) -> int:
         )
         _save_error_to_file(e)
         exit_code = 1
+
+    if exit_code is None:
+        exit_code = 0
 
     return exit_code
 
