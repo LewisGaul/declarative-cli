@@ -52,6 +52,7 @@ python3 -m examples.ex1 tests --pytest-help
 ```
 
 
-## Known Limitations
+### Known Limitations
 
-Does not seem to work properly with pyenv - uses the base python executable on Linux, which may be of a different version.
+- Many of the commands not yet implemented - just provided to illustrate the CLI capabilities.
+- Creating a venv does not seem to work properly with pyenv - uses the base python executable on Linux, which may be of a different version.
