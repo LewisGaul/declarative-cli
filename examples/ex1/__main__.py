@@ -22,6 +22,7 @@ import dcli
 
 _THIS_DIR = pathlib.Path(__file__).parent
 _VENV_DIR = _THIS_DIR / ".venv"
+_CLI_FILE = _THIS_DIR / "cli.yaml"
 
 logger = logging.getLogger(__name__)
 
@@ -385,8 +386,9 @@ def run_bot_cli(args):
         args.remaining_args.remove("--")
     except ValueError:
         pass
-    print("Running bot with:", args.remaining_args)
-    print("Not implemented")
+    print("Running the CLI with bot style...")
+    os.environ["DCLI_FRONTEND"] = "BOT"
+    sys.exit(main(args.remaining_args))
 
 
 def add_bot_player(args):
@@ -431,9 +433,7 @@ def main(argv) -> int:
 
     # Load the CLI schema and parse args.
     prog = "run.bat" if sys.platform.startswith("win") else "run.sh"
-    parser = dcli.create_cli_parser(
-        _THIS_DIR / "cli.yaml", frontend=frontend, prog=prog
-    )
+    parser = dcli.create_cli_parser(_CLI_FILE, frontend=frontend, prog=prog)
     args = parser.parse_args(argv)
     logger.debug("Got args:", args)
 
