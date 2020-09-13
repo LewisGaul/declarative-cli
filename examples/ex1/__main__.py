@@ -18,7 +18,7 @@ from typing import Iterable, Optional, Union
 
 import yaml
 
-from dcli import CLIParser, RootNode
+from dcli import create_cli_parser
 
 
 _THIS_DIR = pathlib.Path(__file__).parent
@@ -423,13 +423,9 @@ def _save_error_to_file(exc: Exception):
 
 
 def main(argv) -> int:
-    # Load the CLI schema.
-    with open(str(_THIS_DIR / "cli.yaml")) as f:
-        schema = RootNode.from_dict(yaml.safe_load(f))
-
-    # Parse argv.
+    # Load the CLI schema and parse args.
     prog = "run.bat" if sys.platform.startswith("win") else "run.sh"
-    args = CLIParser(schema, prog=prog).parse_args(argv)
+    args = create_cli_parser(_THIS_DIR / "cli.yaml", prog=prog).parse_args(argv)
     logger.debug("Got args:", args)
 
     # Run the command!

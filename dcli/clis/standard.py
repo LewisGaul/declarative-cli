@@ -11,23 +11,25 @@ import argparse
 import sys
 from typing import List, Optional
 
-from ..schema import RootNode
+from .._schema import RootNode
+from . import AbstractCLIParser, Namespace
 
 
-class CLIParser:
-    """Argument parser based off a structured definition."""
+class CLIParser(AbstractCLIParser):
+    """Argument parser based on argparse."""
 
     def __init__(self, schema: RootNode, *, prog: Optional[str] = None):
         """
         :param schema:
             The schema for the arg parsing.
+        :param prog:
+            The program name.
         """
+        super().__init__(schema)
         self._schema = schema
         self._prog = prog
 
-    def parse_args(
-        self, args: Optional[List[str]] = None, namespace=None
-    ) -> argparse.Namespace:
+    def parse_args(self, args: Optional[List[str]] = None, namespace=None) -> Namespace:
         if args is None:
             args = sys.argv
 

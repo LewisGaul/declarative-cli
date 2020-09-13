@@ -1,7 +1,7 @@
 # August 2020, Lewis Gaul
 
 """
-Handling for a CLI schema.
+Parsing of a CLI schema.
 
 """
 
