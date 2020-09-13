@@ -9,6 +9,7 @@ CLI entry-point.
 # and report sensible errors (i.e. advise that Python 3.6+ is required).
 
 import logging
+import os
 import pathlib
 import re
 import subprocess as sp
@@ -421,10 +422,17 @@ def _save_error_to_file(exc: Exception):
 
 
 def main(argv) -> int:
+    # Select frontend to use.
+    frontend_envvar = os.environ.get("DCLI_FRONTEND")
+    if frontend_envvar and frontend_envvar.upper() in dcli.Frontend.__members__:
+        frontend = getattr(dcli.Frontend, frontend_envvar.upper())
+    else:
+        frontend = dcli.Frontend.ARGPARSE
+
     # Load the CLI schema and parse args.
     prog = "run.bat" if sys.platform.startswith("win") else "run.sh"
     parser = dcli.create_cli_parser(
-        _THIS_DIR / "cli.yaml", frontend=dcli.Frontend.BOT, prog=prog
+        _THIS_DIR / "cli.yaml", frontend=frontend, prog=prog
     )
     args = parser.parse_args(argv)
     logger.debug("Got args:", args)
