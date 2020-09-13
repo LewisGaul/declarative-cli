@@ -16,12 +16,14 @@ from . import AbstractCLIParser, Namespace
 class CLIParser(AbstractCLIParser):
     """Argument parser using a bot style."""
 
-    def __init__(self, schema: RootNode):
+    def __init__(self, schema: RootNode, **kwargs):
         """
         :param schema:
             The schema for the arg parsing.
+        :param kwargs:
+            Passed to base class.
         """
-        super().__init__(schema)
+        super().__init__(schema, **kwargs)
         self._schema = schema
 
     def parse_args(self, args: Optional[List[str]] = None) -> Namespace:

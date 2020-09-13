@@ -16,9 +16,7 @@ import sys
 import traceback
 from typing import Iterable, Optional, Union
 
-import yaml
-
-from dcli import create_cli_parser
+import dcli
 
 
 _THIS_DIR = pathlib.Path(__file__).parent
@@ -425,7 +423,10 @@ def _save_error_to_file(exc: Exception):
 def main(argv) -> int:
     # Load the CLI schema and parse args.
     prog = "run.bat" if sys.platform.startswith("win") else "run.sh"
-    args = create_cli_parser(_THIS_DIR / "cli.yaml", prog=prog).parse_args(argv)
+    parser = dcli.create_cli_parser(
+        _THIS_DIR / "cli.yaml", frontend=dcli.Frontend.BOT, prog=prog
+    )
+    args = parser.parse_args(argv)
     logger.debug("Got args:", args)
 
     # Run the command!

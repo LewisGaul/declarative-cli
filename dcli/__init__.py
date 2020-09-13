@@ -19,6 +19,8 @@ from .clis import standard as standard_cli
 
 
 class Frontend(enum.Enum):
+    """Frontend options for parsing CLI."""
+
     ARGPARSE = enum.auto()
     BOT = enum.auto()
 
