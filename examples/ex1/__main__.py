@@ -17,7 +17,8 @@ import sys
 import traceback
 from typing import Iterable, Optional, Union
 
-import dcli
+sys.path.insert(0, str(pathlib.Path(__file__).parents[2] / "python"))
+import dcli  # isort:skip
 
 
 _THIS_DIR = pathlib.Path(__file__).parent
