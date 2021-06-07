@@ -10,7 +10,7 @@ __all__ = ("Frontend", "create_cli_parser")
 import enum
 from typing import Type
 
-import yaml
+import nestedtext
 
 from ._schema import RootNode
 from ._utils import PathLike
@@ -49,5 +49,5 @@ def create_cli_parser(
         A CLI parser instance.
     """
     with open(file) as f:
-        loaded_schema = RootNode.from_dict(yaml.safe_load(f))
+        loaded_schema = RootNode.from_dict(nestedtext.load(f))
     return frontend.get_parser()(loaded_schema, **kwargs)
