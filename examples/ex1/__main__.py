@@ -22,7 +22,7 @@ import dcli
 
 _THIS_DIR = pathlib.Path(__file__).parent
 _VENV_DIR = _THIS_DIR / ".venv"
-_CLI_FILE = _THIS_DIR / "cli.yaml"
+_CLI_FILE = _THIS_DIR / "cli.nt"
 
 logger = logging.getLogger(__name__)
 

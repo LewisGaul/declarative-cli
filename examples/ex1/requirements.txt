@@ -1,1 +1,1 @@
-PyYAML
+py-nestedtext==0.0.4
