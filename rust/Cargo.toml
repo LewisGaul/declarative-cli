@@ -1,0 +1,9 @@
+[package]
+name = "declarative-cli"
+version = "0.1.0"
+authors = ["Lewis Gaul <lewis.gaul@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+yaml-rust = "0.4.4"
+clap = "2.33.3"
